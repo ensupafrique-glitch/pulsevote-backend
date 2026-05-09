@@ -19,5 +19,3 @@ jobs:
       - run: npm run db:migrate:deploy
       - run: npm run test:e2e
       - run: echo "Deploy backend to staging infrastructure"
-      - run: npm run test:e2e
-      - run: echo "Deploy backend to staging infrastructure"
