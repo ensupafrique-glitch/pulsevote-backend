@@ -9,15 +9,17 @@ jobs:
     environment: staging
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install
-      - run: pnpm db:generate
-      - run: pnpm db:migrate:deploy
-      - run: pnpm test:e2e
+          node-version: 18
+          cache: 'npm'
+      - run: npm install
+      - run: npm run db:generate
+      - run: npm run db:migrate:deploy
+      - run: npm run test:e2e
+      - run: echo "Deploy backend to staging infrastructure"
+        - run: npm install
+      - run: npm run db:generate
+      - run: npm run db:migrate:deploy
+      - run: npm run test:e2e
       - run: echo "Deploy backend to staging infrastructure"
