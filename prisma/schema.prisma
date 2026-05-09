@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id          String       @id @default(uuid()) @db.Uuid
+  name        String
+  slug        String       @unique
+  plan        String       @default("starter")
+  memberships Membership[]
+  surveys     Survey[]
+  createdAt   DateTime     @default(now())
+}
+
+model User {
+  id                 String              @id @default(uuid()) @db.Uuid
+  email              String              @unique
+  displayName        String?
+  status             String              @default("active")
+  memberships        Membership[]
+  surveys            Survey[]            @relation("SurveyCreator")
+  passkeyCredentials PasskeyCredential[]
+  createdAt          DateTime            @default(now())
+}
+
+model Membership {
+  id        String       @id @default(uuid()) @db.Uuid
+  orgId     String       @db.Uuid
+  userId    String       @db.Uuid
+  role      String
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime     @default(now())
+
+  @@unique([orgId, userId])
+}
+
+model Survey {
+  id          String          @id @default(uuid()) @db.Uuid
+  orgId       String          @db.Uuid
+  title       String
+  slug        String
+  description String?
+  status      String          @default("draft")
+  visibility  String          @default("private")
+  createdBy   String          @db.Uuid
+  org         Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  creator     User            @relation("SurveyCreator", fields: [createdBy], references: [id])
+  questions   SurveyQuestion[]
+  votes       Vote[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@unique([orgId, slug])
+  @@index([orgId, status])
+}
+
+model SurveyQuestion {
+  id           String         @id @default(uuid()) @db.Uuid
+  orgId        String         @db.Uuid
+  surveyId     String         @db.Uuid
+  prompt       String
+  questionType String
+  position     Int
+  survey       Survey         @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  options      SurveyOption[]
+
+  @@unique([surveyId, position])
+}
+
+model SurveyOption {
+  id         String         @id @default(uuid()) @db.Uuid
+  orgId      String         @db.Uuid
+  questionId String         @db.Uuid
+  label      String
+  value      String
+  position   Int
+  question   SurveyQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId, position])
+}
+
+model Vote {
+  id             String   @id @default(uuid()) @db.Uuid
+  orgId          String   @db.Uuid
+  surveyId       String   @db.Uuid
+  questionId     String   @db.Uuid
+  optionId       String?  @db.Uuid
+  anonymousToken String?  @db.Uuid
+  demographics   Json
+  createdAt      DateTime @default(now())
+
+  survey         Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, surveyId])
+}
+
+model MagicLinkToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String
+  tokenHash String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([email, createdAt])
+}
+
+model AuthChallenge {
+  id        String   @id @default(uuid()) @db.Uuid
+  kind      String
+  email     String
+  challenge String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([email, kind, createdAt])
+}
+
+model PasskeyCredential {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @db.Uuid
+  webauthnUserId String
+  credentialId   Bytes    @unique @db.ByteA
+  publicKey      Bytes    @db.ByteA
+  counter        Int      @default(0)
+  transports     Json
+  backedUp       Boolean  @default(false)
+  lastUsedAt     DateTime?
+  createdAt      DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
