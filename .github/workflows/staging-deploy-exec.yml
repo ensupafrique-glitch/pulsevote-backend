@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: staging
     env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL_NEW }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
